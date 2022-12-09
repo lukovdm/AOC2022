@@ -9,7 +9,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
 
         hPkgs =
-          pkgs.haskell.packages."ghc8107"; # need to match Stackage LTS version
+          pkgs.haskell.packages."ghc92"; # need to match Stackage LTS version
                                            # from stack.yaml resolver
 
         myDevTools = [
