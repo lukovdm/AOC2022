@@ -1,31 +1,38 @@
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Lib
-  ( ex1a,
-    ex1b,
-    ex2a,
-    ex2b,
-    ex3a,
-    ex3b,
-    ex4a,
-    ex4b,
-    ex5a,
-    ex5b
+  ( problems
   )
 where
 
 import Control.Arrow (Arrow (second, (&&&), first), (***))
 import Data.Char (ord, isSpace)
-import Data.List (intersect, nub, sort, unfoldr, elemIndex, transpose, uncons)
+import Data.List (intersect, nub, sort, unfoldr, elemIndex, transpose, uncons, findIndex, sortOn, singleton, zip5)
 import GHC.Unicode (isLower)
 import Data.Maybe (fromJust, catMaybes)
-import Debug.Trace (trace, traceShow)
 
-splitOn :: (a -> Bool) -> [a] -> [[a]]
-splitOn p = foldr (\x o -> if p x then [] : o else (x : head o) : tail o) [[]]
+import Util (splitOn, replace)
+import Seven (buildNodes, findDirs, calcSize, calcSize', findDirs', name)
+import Control.Monad (liftM2)
 
-replace :: Int -> (a -> a) -> [a] -> [a]
-replace i f l = uncurry (++) $ second (uncurry (:) . first f . fromJust . uncons) $ splitAt i l
+problems :: String -> String -> String
+problems "1a" = ex1a
+problems "1b" = ex1b
+problems "2a" = ex2a
+problems "2b" = ex2b
+problems "3a" = ex3a
+problems "3b" = ex3b
+problems "4a" = ex4a
+problems "4b" = ex4b
+problems "5a" = ex5a
+problems "5b" = ex5b
+problems "6a" = ex6a
+problems "6b" = ex6b
+problems "7a" = ex7a
+problems "7b" = ex7b
+problems "8a" = ex8a
+problems _ = const "This is not yet solved"
 
 ex1a :: String -> String
 ex1a x = show $ maximum $ map (sum . map (read :: String -> Int)) $ splitOn null $ lines x
@@ -98,3 +105,45 @@ simulate' s (a, f, t) = replace t (take a (s !! f) ++) $ replace f (drop a) s
 
 ex5b :: String -> String
 ex5b = show . map head . uncurry (foldl simulate') . (parseStack *** map parseMoves) . (init *** tail) . uncurry splitAt . (fromJust . elemIndex [] &&& id) . lines
+
+ex6a :: String -> String
+ex6a x = show $ (+ 4) $ fromJust $ findIndex ((== 4) . length . nub) $ unfoldr (\l -> if null l then Nothing else Just (take 4 l, tail l)) x
+
+ex6b :: String -> String
+ex6b x = show $ (+ 14) $ fromJust $ findIndex ((== 14) . length . nub) $ unfoldr (\l -> if null l then Nothing else Just (take 14 l, tail l)) x
+
+ex7a :: String -> String
+ex7a = show . sum . findDirs . calcSize . buildNodes
+
+ex7b :: String -> String
+ex7b = show . sortOn snd . filter ((> (30000000 - 70000000 + 43562874)) . snd) . findDirs' . calcSize' . buildNodes
+
+ex8a :: String -> String
+ex8a input =
+  let
+    m = map (map ((read :: String -> Int) . singleton)) $ lines input
+    h = length m
+    w = length $ head m
+    me = map (scanr1 max) m
+    mw = map (scanl1 max) m
+    mn = transpose $ map (scanl1 max) (transpose m)
+    ms = transpose $ map (scanr1 max) (transpose m)
+    mc = liftM2 (,) (take h $ iterate succ (0 :: Int)) (take w $ iterate succ (0 :: Int))
+    get (y, x) z = if y < 0 || y >= h || x < 0 || x >= w then -1 else z !! y !! x
+    m' = map (\(y, x) -> get (y, x) m <= minimum [get (y, x + 1) me, get (y, x - 1) mw, get (y - 1, x) mn, get (y + 1, x) ms]) mc
+    m'' = map (\(y, x) -> (get (y, x + 1) me, get (y, x - 1) mw, get (y - 1, x) mn, get (y + 1, x) ms)) mc
+    text = unlines $ map show $ unfoldr (\l -> case splitAt w l of
+                                            ([], _) -> Nothing
+                                            (a, b) -> Just (a, b)
+                                        ) m'
+  in
+    show $ length $ filter not m'
+
+ex8b :: String -> String
+ex8b input =
+  let
+    m = map (map ((read :: String -> Int) . singleton)) $ lines input
+    h = length m
+    w = length $ head m
+  in
+    show m
